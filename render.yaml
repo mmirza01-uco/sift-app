@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: sift-app
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: JEV_MODEL
+        value: typesafe/jev-1.13
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: DAILY_QUOTA
+        value: "20"
+      - key: CACHE_TTL_DAYS
+        value: "30"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: FIREBASE_WEB_CONFIG
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false

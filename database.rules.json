@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "analyses": {
+          ".indexOn": ["createdAt"],
+          "$analysisId": {
+            ".write": "auth != null && auth.uid === $uid && !newData.exists()"
+          }
+        }
+      }
+    },
+    "messageCache": { ".read": false, ".write": false },
+    "quota": { ".read": false, ".write": false },
+    "feedback": { ".read": false, ".write": false }
+  }
+}

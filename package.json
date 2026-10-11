@@ -1,0 +1,18 @@
+{
+  "name": "sift-app",
+  "version": "1.0.0",
+  "description": "Menilai risiko pesan berantai WhatsApp dengan Jev dan menulis balasan sopan dengan Gemini.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test \"test/*.test.js\"",
+    "eval": "node --env-file-if-exists=.env scripts/eval.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "firebase-admin": "^14.5.0"
+  }
+}

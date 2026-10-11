@@ -1,0 +1,7 @@
+node_modules/
+.env
+test/eval-results.json
+.DS_Store
+# Kunci rahasia Firebase (service account) jangan pernah di-commit
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
