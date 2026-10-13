@@ -1,0 +1,5 @@
+id,teks,label_kategori,label_risiko,label_mendesak,sumber
+P01,"PENTING!!! Dokter dari rumah sakit ternama menemukan bahwa minum air rebusan bawang putih 3x sehari bisa membersihkan paru-paru dari virus dalam 2 hari. Sebarkan ke semua grup keluarga sebelum dihapus!!",hoaks_kesehatan,tinggi,true,contoh
+P02,"Selamat! Nomor WA Anda terpilih sebagai penerima Bantuan Sosial Rp3.500.000. Klik link bit.ly/bansos-cair2026 dan isi data KTP sebelum pukul 23.59 hari ini.",penipuan_berhadiah,tinggi,true,contoh
+P03,"Mulai bulan depan tarif listrik naik untuk semua golongan rumah tangga. Siap-siap ya keluarga.",info_politik,sedang,false,contoh
+P04,"Assalamualaikum, besok arisan keluarga di rumah Tante Ani jam 4 sore. Jangan lupa bawa kue ya.",aman,rendah,false,contoh
