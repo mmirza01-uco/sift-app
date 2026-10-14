@@ -80,7 +80,6 @@ h3{font-size:16px;margin:0 0 4px;font-weight:700}
 .alert{border-radius:12px;padding:10px 12px;font-size:14px;margin-top:12px;display:flex;gap:8px}
 .alert-error{background:var(--high-soft);color:var(--ink)}
 .alert-error svg{color:var(--high);flex:none;margin-top:2px}
-.alert-info{background:var(--safe-soft);color:var(--ink)}
 
 /* ---------- Login ---------- */
 .login{display:flex;flex-direction:column;min-height:100%;padding-top:20px}

@@ -34,8 +34,6 @@ if (demoMode) {
   const auth = getAuth(app);
   verifyToken = async (token) => {
     const t = await auth.verifyIdToken(token);
-    // Akun email/kata sandi wajib sudah klik tautan verifikasi (login Google selalu terverifikasi).
-    if (t.email && !t.email_verified) throw new Error("email belum diverifikasi");
     return { uid: t.uid, name: t.name ?? "", email: t.email ?? "" };
   };
   publicConfig = { demoMode: false, firebase: JSON.parse(env.FIREBASE_WEB_CONFIG) };

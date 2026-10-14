@@ -81,7 +81,6 @@ const AUTH_ERRORS = {
   "auth/invalid-email": "Format email tidak valid.",
   "auth/too-many-requests": "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.",
   "auth/network-request-failed": "Koneksi internet bermasalah.",
-  "app/email-not-verified": "Email belum diverifikasi. Kami kirim ulang tautannya, cek kotak masuk atau folder spam.",
   "auth/popup-closed-by-user": "Jendela login Google ditutup sebelum selesai.",
   "auth/popup-blocked": "Browser memblokir jendela login. Izinkan pop-up lalu coba lagi.",
 };
@@ -122,16 +121,14 @@ async function setupFirebaseAuth(firebaseConfig) {
 
   let registerMode = false;
   const err = $("#loginError");
-  const notice = $("#loginNotice");
-  const showNotice = (t) => { notice.textContent = t; notice.hidden = false; };
-  const showErr = (e) => { err.textContent = AUTH_ERRORS[e.code] || "Gagal masuk. Coba lagi."; err.hidden = false; notice.hidden = true; };
+  const showErr = (e) => { err.textContent = AUTH_ERRORS[e.code] || "Gagal masuk. Coba lagi."; err.hidden = false; };
   $("#modeToggle").addEventListener("click", () => {
     registerMode = !registerMode;
     $("#emailBtn").textContent = registerMode ? "Daftar" : "Masuk";
     $("#modeText").textContent = registerMode ? "Sudah punya akun?" : "Belum punya akun?";
     $("#modeToggle").textContent = registerMode ? "Masuk" : "Daftar";
     $("#pw").autocomplete = registerMode ? "new-password" : "current-password";
-    err.hidden = true; notice.hidden = true;
+    err.hidden = true;
   });
   $("#googleBtn").addEventListener("click", async () => {
     err.hidden = true;
@@ -144,26 +141,11 @@ async function setupFirebaseAuth(firebaseConfig) {
     if (!email || pw.length < 6) { showErr({ code: !email ? "auth/invalid-email" : "auth/weak-password" }); return; }
     $("#emailBtn").disabled = true;
     try {
-      if (registerMode) {
-        const cred = await fa.createUserWithEmailAndPassword(auth, email, pw);
-        // Webmailer: kirim tautan verifikasi, lalu arahkan kembali ke halaman login.
-        await fa.sendEmailVerification(cred.user, { url: window.location.origin });
-        await fa.signOut(auth);
-        $("#modeToggle").click();
-        showNotice(`Tautan verifikasi sudah dikirim ke ${email}. Klik tautan itu, lalu masuk.`);
-      } else {
-        const cred = await fa.signInWithEmailAndPassword(auth, email, pw);
-        if (!cred.user.emailVerified) {
-          await fa.sendEmailVerification(cred.user, { url: window.location.origin });
-          await fa.signOut(auth);
-          showErr({ code: "app/email-not-verified" });
-        }
-      }
+      if (registerMode) await fa.createUserWithEmailAndPassword(auth, email, pw);
+      else await fa.signInWithEmailAndPassword(auth, email, pw);
     } catch (e2) { showErr(e2); } finally { $("#emailBtn").disabled = false; }
   });
   fa.onAuthStateChanged(auth, (u) => {
-    // Akun email yang belum terverifikasi tidak boleh masuk ke aplikasi.
-    if (u && !u.emailVerified) return;
     if (u) onSignedIn({ name: u.displayName || "", email: u.email || "" });
     else { state.user = null; show("login"); }
   });
