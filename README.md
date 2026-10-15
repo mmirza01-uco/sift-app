@@ -46,7 +46,7 @@ npm start
 
 Buka http://localhost:3000, isi nama panggilan, lalu coba keempat contoh pesan.
 
-Checkpoint: `npm test` menampilkan `pass 23`, `fail 0`, dan halaman login mode demo muncul.
+Checkpoint: `npm test` menampilkan `pass 26`, `fail 0`, dan halaman login mode demo muncul.
 
 ## Langkah 2: Siapkan Firebase
 

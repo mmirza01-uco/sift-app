@@ -198,3 +198,15 @@ details.detail .body{padding:0 16px 16px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Akun: profil dan laporan */
+.btn-danger{background:var(--surface);color:var(--high);border:1.5px solid var(--high)}
+.btn-danger.armed{background:var(--high);color:#fff}
+.fblist{list-style:none;margin:0;padding:0}
+.fblist li{padding:12px 0;border-bottom:1px solid var(--line)}
+.fblist li:last-child{border-bottom:0}
+.fblist li.empty{color:var(--ink-3);font-size:14px}
+.fblist small{color:var(--ink-3);font-size:12.5px}
+.fblist select,.fblist input{width:100%;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;padding:0 12px;background:var(--surface);color:var(--ink);font-size:15px;margin-top:8px}
+.fblist .row{display:flex;gap:8px;margin-top:8px}
+.fblist .row .btn{flex:1}

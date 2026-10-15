@@ -38,6 +38,7 @@ function show(name) {
   $$(".tabbar button[aria-current]").forEach((b) => b.setAttribute("aria-current", "page"));
   $("#scroll").scrollTop = 0;
   if (name === "riwayat") loadHistory();
+  if (name === "akun") loadAkun();
 }
 document.addEventListener("click", (e) => {
   const g = e.target.closest("[data-go]");
@@ -86,13 +87,18 @@ const AUTH_ERRORS = {
   "auth/popup-blocked": "Browser memblokir jendela login. Izinkan pop-up lalu coba lagi.",
 };
 
+function setAvatar(name) {
+  const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
+  $("#avatar").textContent = initial;
+  $("#avatar").setAttribute("aria-label", `Akun: ${name}. Buka pengaturan akun.`);
+}
+
 function onSignedIn(user) {
   state.user = user;
-  const initial = (user.name || user.email || "?").trim().charAt(0).toUpperCase() || "?";
-  $("#avatar").textContent = initial;
-  $("#avatar").setAttribute("aria-label", `Akun: ${user.name || user.email}. Buka menu Tentang untuk keluar.`);
+  setAvatar(user.name || user.email);
   show("periksa");
   refreshQuota();
+  loadProfile();
 }
 
 async function setupDemoAuth() {
@@ -171,7 +177,7 @@ async function setupFirebaseAuth(firebaseConfig) {
 
 $("#logout").addEventListener("click", async () => {
   await state.signOut?.();
-  state.user = null; state.result = null; state.history = [];
+  state.user = null; state.result = null; state.history = []; state.profile = null;
   show("login");
 });
 
@@ -353,7 +359,7 @@ async function sendFeedback() {
   const label = state.result.lowConfidence || state.result.riskLevel === "rendah" ? "salah_risiko" : "salah_kategori";
   try {
     await api("/api/feedback", { method: "POST", body: { analysisId: state.result.analysisId, label } });
-    toast("Terima kasih, laporan tercatat");
+    toast("Laporan tercatat. Ubah detailnya di menu Akun.");
     $("#fb").disabled = true;
   } catch (e) { toast(e.message); }
 }
@@ -427,6 +433,116 @@ $("#hist").addEventListener("click", async (e) => {
       state.history = state.history.filter((x) => x.id !== del.dataset.del);
       renderHistory();
       toast("Riwayat dihapus");
+    } catch (err) { toast(err.message); }
+  }
+});
+
+// ---------- Akun: profil ----------
+const FB_LABEL = { salah_kategori: "Jenis pesan salah", salah_risiko: "Tingkat risiko salah", balasan_kurang_sopan: "Balasan kurang sopan" };
+let pfTone = "hormat";
+function setPfTone(t) {
+  pfTone = t;
+  $$("[data-pftone]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.pftone === t)));
+}
+$("#pfTone").addEventListener("click", (e) => { const b = e.target.closest("[data-pftone]"); if (b) setPfTone(b.dataset.pftone); });
+
+// Read: ambil profil, pakai nada bawaannya untuk halaman Periksa
+async function loadProfile() {
+  try {
+    const p = await api("/api/profile");
+    state.profile = p;
+    setTone(p.defaultTone);
+    if (p.displayName) setAvatar(p.displayName);
+    return p;
+  } catch { return null; }
+}
+
+async function loadAkun() {
+  $("#profileError").hidden = true;
+  const p = await loadProfile();
+  if (p) {
+    $("#pfName").value = p.displayName;
+    setPfTone(p.defaultTone);
+    $("#akunEmail").textContent = p.email ? `Masuk sebagai ${p.email}` : "Atur profil dan laporan penilaianmu.";
+  }
+  resetDelete();
+  loadFeedback();
+}
+
+// Update: simpan nama panggilan dan nada bawaan
+$("#profileForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errBox = $("#profileError");
+  errBox.hidden = true;
+  const displayName = $("#pfName").value.trim();
+  if (!displayName) { errBox.textContent = "Nama panggilan wajib diisi."; errBox.hidden = false; return; }
+  $("#pfSave").disabled = true;
+  try {
+    const p = await api("/api/profile", { method: "PUT", body: { displayName, defaultTone: pfTone } });
+    setTone(p.defaultTone);
+    setAvatar(p.displayName);
+    toast("Profil disimpan");
+  } catch (err) {
+    errBox.textContent = err.message; errBox.hidden = false;
+  } finally { $("#pfSave").disabled = false; }
+});
+
+// Delete: hapus profil beserta riwayat dan laporan, lalu keluar. Ketuk dua kali untuk konfirmasi.
+const delBtn = $("#delProfile");
+function resetDelete() { delBtn.classList.remove("armed"); delBtn.textContent = "Hapus semua data saya"; }
+delBtn.addEventListener("click", async () => {
+  if (!delBtn.classList.contains("armed")) {
+    delBtn.classList.add("armed");
+    delBtn.textContent = "Ketuk sekali lagi untuk menghapus";
+    return;
+  }
+  delBtn.disabled = true;
+  try {
+    await api("/api/profile", { method: "DELETE" });
+    toast("Semua datamu sudah dihapus");
+    $("#logout").click();
+  } catch (err) { toast(err.message); } finally { delBtn.disabled = false; resetDelete(); }
+});
+
+// ---------- Akun: laporan penilaian keliru ----------
+async function loadFeedback() {
+  const list = $("#fbList");
+  list.innerHTML = `<li><div class="skel" style="margin-top:0;width:40%"></div><div class="skel"></div></li>`;
+  try {
+    const { items } = await api("/api/feedback");
+    if (!items.length) { list.innerHTML = `<li class="empty">Belum ada laporan.</li>`; return; }
+    list.innerHTML = items.map((f) => `<li data-fb="${esc(f.id)}">
+      <small>${f.createdAt ? fmtDate(f.createdAt) : ""}</small>
+      <label class="sr-only" for="fbl-${esc(f.id)}">Jenis kesalahan</label>
+      <select id="fbl-${esc(f.id)}" data-field="label">${Object.entries(FB_LABEL).map(([k, v]) => `<option value="${k}" ${k === f.label ? "selected" : ""}>${v}</option>`).join("")}</select>
+      <label class="sr-only" for="fbn-${esc(f.id)}">Catatan</label>
+      <input id="fbn-${esc(f.id)}" data-field="note" type="text" maxlength="300" placeholder="Catatan (opsional)" value="${esc(f.note)}">
+      <div class="row">
+        <button class="btn btn-outline btn-sm" type="button" data-fbsave>Simpan</button>
+        <button class="btn btn-danger btn-sm" type="button" data-fbdel>Hapus</button>
+      </div>
+    </li>`).join("");
+  } catch (e) {
+    list.innerHTML = `<li class="empty">${esc(e.message)}</li>`;
+  }
+}
+
+$("#fbList").addEventListener("click", async (e) => {
+  const li = e.target.closest("[data-fb]");
+  if (!li) return;
+  const id = li.dataset.fb;
+  if (e.target.closest("[data-fbsave]")) {
+    const label = li.querySelector("[data-field=label]").value;
+    const note = li.querySelector("[data-field=note]").value;
+    try {
+      await api(`/api/feedback/${encodeURIComponent(id)}`, { method: "PATCH", body: { label, note } });
+      toast("Laporan diperbarui");
+    } catch (err) { toast(err.message); }
+  } else if (e.target.closest("[data-fbdel]")) {
+    try {
+      await api(`/api/feedback/${encodeURIComponent(id)}`, { method: "DELETE" });
+      toast("Laporan dihapus");
+      loadFeedback();
     } catch (err) { toast(err.message); }
   }
 });

@@ -191,12 +191,66 @@ export function createApp({ store, jev, gemini, verifyToken, config }) {
     res.status(204).end();
   });
 
+  // ---------- Profil (CRUD users/{uid}/profile) ----------
+  app.get("/api/profile", auth, async (req, res) => {
+    const { uid } = req.user;
+    // Create: profil dibuat otomatis saat pertama kali dibuka
+    await store.upsertProfile(uid, { displayName: req.user.name ?? "", email: req.user.email ?? "" });
+    const p = await store.getProfile(uid);
+    res.json({ displayName: p.displayName ?? "", email: p.email ?? "", defaultTone: p.defaultTone ?? "hormat", createdAt: p.createdAt ?? null });
+  });
+
+  app.put("/api/profile", auth, async (req, res) => {
+    const { displayName, defaultTone } = req.body ?? {};
+    if (typeof displayName !== "string" || displayName.trim().length < 1 || displayName.trim().length > 40)
+      throw new HttpError(400, "invalid_input", "Nama panggilan 1 sampai 40 karakter.");
+    if (!TONES.includes(defaultTone)) throw new HttpError(400, "invalid_input", "Nada balasan tidak dikenal.");
+    await store.upsertProfile(req.user.uid, { displayName: req.user.name ?? "", email: req.user.email ?? "" });
+    await store.updateProfile(req.user.uid, { displayName: displayName.trim(), defaultTone });
+    res.json({ displayName: displayName.trim(), defaultTone });
+  });
+
+  app.delete("/api/profile", auth, async (req, res) => {
+    await store.deleteProfile(req.user.uid);
+    res.status(204).end();
+  });
+
+  // ---------- Umpan balik (CRUD feedback/{uid}) ----------
+  const LABELS = ["salah_kategori", "salah_risiko", "balasan_kurang_sopan"];
+  const noteOf = (n) => {
+    if (n === undefined) return "";
+    if (typeof n !== "string" || n.length > 300) throw new HttpError(400, "invalid_input", "Catatan maksimal 300 karakter.");
+    return n.trim();
+  };
+  const validId = (id) => {
+    if (typeof id !== "string" || !/^[\w-]{1,64}$/.test(id)) throw new HttpError(400, "invalid_input", "ID tidak valid.");
+    return id;
+  };
+
   app.post("/api/feedback", auth, async (req, res) => {
-    const { analysisId, label } = req.body ?? {};
-    const LABELS = ["salah_kategori", "salah_risiko", "balasan_kurang_sopan"];
-    if (!LABELS.includes(label) || typeof analysisId !== "string")
-      throw new HttpError(400, "invalid_input", "Umpan balik tidak valid.");
-    await store.addFeedback(req.user.uid, { analysisId, label });
+    const { analysisId, label, note } = req.body ?? {};
+    if (!LABELS.includes(label)) throw new HttpError(400, "invalid_input", "Umpan balik tidak valid.");
+    validId(analysisId);
+    const id = await store.addFeedback(req.user.uid, { analysisId, label, note: noteOf(note) });
+    res.status(201).json({ id });
+  });
+
+  app.get("/api/feedback", auth, async (req, res) => {
+    const items = await store.listFeedback(req.user.uid);
+    res.json({ items: items.map((f) => ({ id: f.id, analysisId: f.analysisId, label: f.label, note: f.note ?? "", createdAt: f.createdAt ?? null })) });
+  });
+
+  app.patch("/api/feedback/:id", auth, async (req, res) => {
+    const id = validId(req.params.id);
+    const { label, note } = req.body ?? {};
+    if (!LABELS.includes(label)) throw new HttpError(400, "invalid_input", "Umpan balik tidak valid.");
+    const ok = await store.updateFeedback(req.user.uid, id, { label, note: noteOf(note) });
+    if (!ok) throw new HttpError(404, "not_found", "Laporan tidak ditemukan.");
+    res.json({ id, label, note: noteOf(note) });
+  });
+
+  app.delete("/api/feedback/:id", auth, async (req, res) => {
+    await store.deleteFeedback(req.user.uid, validId(req.params.id));
     res.status(204).end();
   });
 

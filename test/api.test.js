@@ -149,11 +149,57 @@ test("kuota: analisis baru ke-4 (kuota 3) = 429, cache tetap boleh", async () =>
   assert.equal(r.status, 200);
 });
 
-test("feedback label tak dikenal = 400, valid = 204", async () => {
+test("feedback: create, read, update, delete", async () => {
   let r = await call("/api/feedback", { method: "POST", body: { analysisId: "x", label: "aneh" } });
   assert.equal(r.status, 400);
   r = await call("/api/feedback", { method: "POST", body: { analysisId: "x", label: "salah_kategori" } });
+  assert.equal(r.status, 201);
+  const { id } = await r.json();
+  let d = await (await call("/api/feedback")).json();
+  assert.equal(d.items.length, 1);
+  assert.equal(d.items[0].label, "salah_kategori");
+  r = await call(`/api/feedback/${id}`, { method: "PATCH", body: { label: "salah_risiko", note: "Ini cuma info arisan" } });
+  assert.equal(r.status, 200);
+  d = await (await call("/api/feedback")).json();
+  assert.equal(d.items[0].label, "salah_risiko");
+  assert.equal(d.items[0].note, "Ini cuma info arisan");
+  r = await call(`/api/feedback/${id}`, { method: "DELETE" });
   assert.equal(r.status, 204);
+  d = await (await call("/api/feedback")).json();
+  assert.equal(d.items.length, 0);
+});
+
+test("feedback milik pengguna lain tidak terlihat dan tidak bisa diubah", async () => {
+  const { id } = await (await call("/api/feedback", { method: "POST", body: { analysisId: "y", label: "salah_risiko" } })).json();
+  const d = await (await call("/api/feedback", { token: "bob" })).json();
+  assert.equal(d.items.length, 0);
+  const r = await call(`/api/feedback/${id}`, { token: "bob", method: "PATCH", body: { label: "salah_kategori" } });
+  assert.equal(r.status, 404);
+});
+
+test("profil: dibuat otomatis, bisa diubah, nada tak dikenal = 400", async () => {
+  let d = await (await call("/api/profile", { token: "carol" })).json();
+  assert.equal(d.displayName, "carol");
+  assert.equal(d.defaultTone, "hormat");
+  let r = await call("/api/profile", { token: "carol", method: "PUT", body: { displayName: "Bu Carol", defaultTone: "galak" } });
+  assert.equal(r.status, 400);
+  r = await call("/api/profile", { token: "carol", method: "PUT", body: { displayName: "Bu Carol", defaultTone: "santai" } });
+  assert.equal(r.status, 200);
+  d = await (await call("/api/profile", { token: "carol" })).json();
+  assert.equal(d.displayName, "Bu Carol");
+  assert.equal(d.defaultTone, "santai");
+});
+
+test("hapus profil menghapus riwayat dan laporan milik pengguna", async () => {
+  // carol punya 1 riwayat (dari tes Gemini gagal)
+  assert.equal((await (await call("/api/history", { token: "carol" })).json()).items.length, 1);
+  await call("/api/feedback", { token: "carol", method: "POST", body: { analysisId: "z", label: "salah_risiko" } });
+  const r = await call("/api/profile", { token: "carol", method: "DELETE" });
+  assert.equal(r.status, 204);
+  assert.equal((await (await call("/api/history", { token: "carol" })).json()).items.length, 0);
+  assert.equal((await (await call("/api/feedback", { token: "carol" })).json()).items.length, 0);
+  const d = await (await call("/api/profile", { token: "carol" })).json();
+  assert.equal(d.displayName, "carol");
 });
 
 test("JSON rusak = 400, endpoint tak dikenal = 404, frontend tersaji", async () => {

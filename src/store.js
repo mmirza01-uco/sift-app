@@ -15,6 +15,17 @@ export function createRtdbStore(db, ServerValue) {
       const snap = await ref.get();
       if (!snap.exists()) await ref.set({ ...profile, defaultTone: "hormat", createdAt: now() });
     },
+    async getProfile(uid) {
+      const snap = await db.ref(`users/${uid}/profile`).get();
+      return snap.exists() ? snap.val() : null;
+    },
+    async updateProfile(uid, patch) {
+      await db.ref(`users/${uid}/profile`).update({ ...patch, updatedAt: now() });
+    },
+    async deleteProfile(uid) {
+      // Hapus profil beserta semua data milik pengguna
+      await db.ref().update({ [`users/${uid}`]: null, [`feedback/${uid}`]: null });
+    },
 
     async getCache(hash) {
       const snap = await db.ref(`messageCache/${hash}`).get();
@@ -70,25 +81,47 @@ export function createRtdbStore(db, ServerValue) {
     },
 
     async addFeedback(uid, data) {
-      await db.ref(`feedback/${uid}`).push({ ...data, createdAt: now() });
+      const ref = db.ref(`feedback/${uid}`).push();
+      await ref.set({ ...data, createdAt: now() });
+      return ref.key;
+    },
+    async listFeedback(uid) {
+      const snap = await db.ref(`feedback/${uid}`).get();
+      const items = [];
+      snap.forEach((child) => { items.push({ id: child.key, ...child.val() }); });
+      return items.reverse();
+    },
+    async updateFeedback(uid, id, patch) {
+      const ref = db.ref(`feedback/${uid}/${id}`);
+      if (!(await ref.get()).exists()) return false;
+      await ref.update({ ...patch, updatedAt: now() });
+      return true;
+    },
+    async deleteFeedback(uid, id) {
+      await db.ref(`feedback/${uid}/${id}`).remove();
     },
   };
 }
 
 export function createMemoryStore() {
-  const profiles = new Map(), cache = new Map(), analyses = new Map(), quota = new Map(), feedback = [];
+  const profiles = new Map(), cache = new Map(), analyses = new Map(), quota = new Map(), feedback = new Map();
   let seq = 0;
   const userMap = (uid) => { if (!analyses.has(uid)) analyses.set(uid, new Map()); return analyses.get(uid); };
+  const fbMap = (uid) => { if (!feedback.has(uid)) feedback.set(uid, new Map()); return feedback.get(uid); };
+  const newId = (p) => `${p}${Date.now().toString(36)}${(seq++).toString(36)}`;
   return {
     _dump: () => ({ profiles, cache, analyses, quota, feedback }),
-    async upsertProfile(uid, profile) { if (!profiles.has(uid)) profiles.set(uid, { ...profile, createdAt: Date.now() }); },
+    async upsertProfile(uid, profile) { if (!profiles.has(uid)) profiles.set(uid, { ...profile, defaultTone: "hormat", createdAt: Date.now() }); },
+    async getProfile(uid) { return profiles.has(uid) ? structuredClone(profiles.get(uid)) : null; },
+    async updateProfile(uid, patch) { profiles.set(uid, { ...(profiles.get(uid) || {}), ...patch, updatedAt: Date.now() }); },
+    async deleteProfile(uid) { profiles.delete(uid); analyses.delete(uid); feedback.delete(uid); },
     async getCache(hash) { return cache.has(hash) ? structuredClone(cache.get(hash)) : null; },
     async saveCache(hash, data) { cache.set(hash, { ...structuredClone(data), hitCount: 1, firstSeenAt: Date.now(), lastSeenAt: Date.now() }); },
     async touchCache(hash) { const c = cache.get(hash); if (c) { c.hitCount += 1; c.lastSeenAt = Date.now(); } },
     async setCacheReply(hash, tone, reply) { const c = cache.get(hash); if (c) c.replies = { ...(c.replies || {}), [tone]: reply }; },
     async setCacheReason(hash, reason) { const c = cache.get(hash); if (c) c.reason = reason; },
     async addAnalysis(uid, data) {
-      const id = `a${Date.now().toString(36)}${(seq++).toString(36)}`;
+      const id = newId("a");
       userMap(uid).set(id, { ...structuredClone(data), createdAt: Date.now() + seq });
       return id;
     },
@@ -106,6 +139,21 @@ export function createMemoryStore() {
       return { allowed: true, used: n + 1 };
     },
     async peekQuota(uid) { return quota.get(`${uid}/${todayKey()}`) || 0; },
-    async addFeedback(uid, data) { feedback.push({ uid, ...data, createdAt: Date.now() }); },
+    async addFeedback(uid, data) {
+      const id = newId("f");
+      fbMap(uid).set(id, { ...structuredClone(data), createdAt: Date.now() + seq });
+      return id;
+    },
+    async listFeedback(uid) {
+      return [...fbMap(uid).entries()].map(([id, f]) => ({ id, ...structuredClone(f) }))
+        .sort((x, y) => y.createdAt - x.createdAt);
+    },
+    async updateFeedback(uid, id, patch) {
+      const f = fbMap(uid).get(id);
+      if (!f) return false;
+      Object.assign(f, patch, { updatedAt: Date.now() });
+      return true;
+    },
+    async deleteFeedback(uid, id) { fbMap(uid).delete(id); },
   };
 }

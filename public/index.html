@@ -73,7 +73,7 @@
       <header class="apphead">
         <div class="logo" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><defs><mask id="sift-mark-head" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M42 16H30a5.5 5.5 0 0 0 0 11h8a5.5 5.5 0 0 1 0 11H26" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="M22 6H44a14 14 0 0 1 14 14v14a14 14 0 0 1-14 14H22L9 58V20A14 14 0 0 1 22 6Z" fill="currentColor" mask="url(#sift-mark-head)"/></svg></div>
         <div><b>Sift</b><small>Saring sebelum sharing</small></div>
-        <button class="avatar" id="avatar" aria-label="Akun dan keluar">?</button>
+        <button class="avatar" id="avatar" data-go="akun" type="button" aria-label="Akun">?</button>
       </header>
       <h1 class="title">Pesan apa yang mau dicek?</h1>
       <p class="lead">Salin pesan dari WhatsApp, lalu tempel di sini.</p>
@@ -149,6 +149,43 @@
       <div class="card">
         <h3>Batasan dan privasi</h3>
         <p class="muted" style="margin:0">Sift menilai pola risiko, bukan memeriksa fakta. Bila hasilnya ragu, cek ke situs cek fakta. Nomor HP, email, dan angka 16 digit disamarkan sebelum teks dikirim ke layanan AI.</p>
+      </div>
+    </section>
+
+    <!-- AKUN -->
+    <section class="screen" data-screen="akun" hidden>
+      <button class="linkbtn" data-go="periksa" style="display:inline-flex;align-items:center;gap:4px;margin:0 0 10px -6px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Kembali</button>
+      <h1 class="title">Akun</h1>
+      <p class="lead" id="akunEmail">Atur profil dan laporan penilaianmu.</p>
+
+      <form class="card" id="profileForm" novalidate>
+        <h3>Profil</h3>
+        <div class="formrow">
+          <label class="label" for="pfName" style="font-size:14px">Nama panggilan</label>
+          <input id="pfName" class="input" type="text" maxlength="40" autocomplete="nickname" required>
+        </div>
+        <div class="formrow">
+          <span class="label" id="pfToneLbl" style="font-size:14px">Nada balasan bawaan</span>
+          <div class="seg" role="group" aria-labelledby="pfToneLbl" id="pfTone">
+            <button aria-pressed="true" data-pftone="hormat" type="button">Orang tua</button>
+            <button aria-pressed="false" data-pftone="netral" type="button">Netral</button>
+            <button aria-pressed="false" data-pftone="santai" type="button">Sepupu</button>
+          </div>
+        </div>
+        <div class="alert alert-error" id="profileError" role="alert" hidden></div>
+        <button class="btn btn-primary" style="margin-top:16px" type="submit" id="pfSave">Simpan profil</button>
+      </form>
+
+      <div class="card">
+        <h3>Laporan penilaian keliru</h3>
+        <p class="muted" style="margin:0 0 4px">Ubah jenis kesalahan, tambah catatan, atau hapus laporan.</p>
+        <ul class="fblist" id="fbList"></ul>
+      </div>
+
+      <div class="card">
+        <h3>Hapus data</h3>
+        <p class="muted" style="margin:0 0 12px">Menghapus profil, riwayat, dan laporanmu dari database. Tidak bisa dibatalkan.</p>
+        <button class="btn btn-danger" id="delProfile" type="button">Hapus semua data saya</button>
       </div>
       <button class="btn btn-outline" id="logout" style="margin-top:16px" type="button">Keluar</button>
     </section>
