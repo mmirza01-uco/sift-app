@@ -167,6 +167,7 @@ details.detail .body{padding:0 16px 16px}
 .feedback{text-align:center;font-size:13.5px;color:var(--ink-3);margin-top:14px}
 .feedback button{border:0;background:transparent;color:var(--ink-2);text-decoration:underline;font-weight:600;min-height:44px;padding:0 4px}
 .original{font-family:var(--read);font-size:15px;color:var(--ink-2);background:var(--surface-2);border-radius:12px;padding:10px 12px;margin:0;white-space:pre-wrap;max-height:9em;overflow:auto}
+.redacted{background:var(--mid-soft);color:var(--mid);border-radius:4px;padding:0 3px;font-weight:600}
 
 /* ---------- Riwayat ---------- */
 .search{width:100%;min-height:48px;border:1.5px solid var(--line-strong);border-radius:999px;padding:0 16px 0 42px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%235E7487' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 16px center;font-size:15px;margin-bottom:12px}

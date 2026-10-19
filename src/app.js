@@ -75,6 +75,7 @@ export function createApp({ store, jev, gemini, verifyToken, config }) {
     reply: a.reply ?? null,
     reason: a.reason ?? "",
     factCheckLinks: a.lowConfidence ? FACT_CHECK_LINKS : [],
+    aiText: redact(a.messageText ?? ""), // teks yang dikirim ke Jev dan Gemini
     ...extra,
   });
 

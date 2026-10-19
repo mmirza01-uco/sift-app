@@ -83,6 +83,7 @@ test("analyze pesan baru: Jev + Gemini dipanggil, data pribadi disamarkan", asyn
   assert.equal(calls.jev, 1);
   assert.equal(calls.gemini, 1);
   assert.ok(!calls.lastJevText.includes("081234567890"));
+  assert.equal(d.aiText, calls.lastJevText); // yang ditampilkan = yang benar-benar dikirim
   firstId = d.analysisId;
 });
 

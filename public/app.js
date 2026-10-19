@@ -319,6 +319,9 @@ function renderResult() {
       ${r.reason ? `<p class="why"><b>Alasan singkat:</b> ${esc(r.reason)}</p>` : ""}
       <p class="why" style="margin-top:12px"><b>Pesan yang diperiksa</b></p>
       <p class="original">${esc(r.messageText)}</p>
+      <p class="why" style="margin-top:12px"><b>Teks yang dikirim ke AI</b></p>
+      <p class="original">${esc(r.aiText ?? r.messageText).replaceAll("[disamarkan]", '<mark class="redacted">[disamarkan]</mark>')}</p>
+      <p class="muted" style="font-size:13px;margin:6px 0 0">${r.aiText && r.aiText !== r.messageText ? "Nomor HP, email, NIK, rekening, dan alamat disamarkan sebelum dikirim." : "Tidak ada data pribadi yang terdeteksi."}</p>
     </div>
   </details>
   <p class="feedback">Penilaian ini keliru? <button type="button" id="fb">Laporkan</button></p>`;
